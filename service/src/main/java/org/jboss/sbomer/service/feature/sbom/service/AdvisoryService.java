@@ -104,6 +104,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AdvisoryService {
 
+    /**
+     * Prefix of the packages for which CBOM generation is temporarily skipped, because the scan takes too long.
+     */
+    private static final String CBOM_EXCLUDED_NVR_PREFIX = "kernel";
+
     @Inject
     @TracingRestClient
     @Setter
@@ -747,7 +752,11 @@ public class AdvisoryService {
                         .withBrewBuildNVR(item.getNvr());
 
                 if (cbomEnabled) {
-                    configBuilder.withCbom(true).withCbomTimeout(Constants.DEFAULT_CBOM_TIMEOUT);
+                    if (item.getNvr().startsWith(CBOM_EXCLUDED_NVR_PREFIX)) {
+                        log.debug("Skipping CBOM generation for NVR: '{}'", item.getNvr());
+                    } else {
+                        configBuilder.withCbom(true).withCbomTimeout(Constants.DEFAULT_CBOM_TIMEOUT);
+                    }
                 }
 
                 BrewRPMConfig config = configBuilder.build();
